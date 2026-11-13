@@ -1,0 +1,70 @@
+{
+  "name": "dsh-agents-modes",
+  "version": "1.2.0",
+  "description": "Leiting — define DeepSeek Harness agent modes as real presets: per-mode persona, tool set, and plugin mounts, with a pure mode that starts with no capability at all.",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "agent-preset",
+    "agent-mode",
+    "cordis"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./catalog": "./catalog.js",
+    "./guard": "./guard.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "catalog.js",
+    "guard.js",
+    "stats.js",
+    "plugin-tools.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "test/*.mjs"
+  ],
+  "scripts": {
+    "test": "node test/locale.test.mjs && node test/presets.test.mjs && node test/guard.test.mjs && node test/stats.test.mjs && node test/page.test.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-agent-preset"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.1.0",
+    "@deepseek-ai/dsh-agent-preset-registry": "*"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/cordis": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-agent-preset-registry": {
+      "optional": true
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Wakis-kaf/dsh-agents-models.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Wakis-kaf/dsh-agents-models/issues"
+  }
+}
