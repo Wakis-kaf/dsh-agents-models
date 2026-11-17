@@ -26,7 +26,7 @@
  * An empty compiled allowlist grants no tools. Missing policy and configured
  * empty policy are different: only the former releases a stale guard on unload.
  *
- * @module dsh-agents-modes/capability-policy
+ * @module dsh-agents-models/capability-policy
  */
 
 // Policies live for the life of this host process. Separate plugin instances in

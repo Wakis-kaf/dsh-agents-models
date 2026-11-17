@@ -217,7 +217,7 @@ const EXTENSIONS = {
       featuresEn: ['Credit ledger on disk'],
     }],
     stateBroken: false,
-    ledger: { path: 'C:\\Users\\x\\.dsh\\plugins-data\\dsh-agents-modes\\session-spend.json', exists: true, sessions: [], total: 3 },
+    ledger: { path: 'C:\\Users\\x\\.dsh\\plugins-data\\dsh-agents-models\\session-spend.json', exists: true, sessions: [], total: 3 },
     priceVersion: '2026-08-17',
     connector: { mounted: true, base: 'http://127.0.0.1:50000' },
   },
@@ -340,7 +340,7 @@ async function settle(render) {
 
 test('the bundle registers a page and a sidebar row under one panel id', () => {
   const b = boot()
-  assert.equal(captured.id, 'dsh-agents-modes')
+  assert.equal(captured.id, 'dsh-agents-models')
   assert.equal(typeof b.module.apply, 'function')
   assert.equal(b.pageSpec.spec.key, 'agent-modes')
   const rail = b.registrations.find((r) => r.spec.name === 'sidebar.panellist')

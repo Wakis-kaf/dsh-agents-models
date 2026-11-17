@@ -16,7 +16,7 @@
  * order and the persona suffix states the preference, because a preset cannot
  * set the host-plane `systemPrompt.toolOrder`.
  *
- * @module dsh-agents-modes
+ * @module dsh-agents-models
  */
 
 import { readFile } from 'node:fs/promises'
@@ -206,7 +206,7 @@ export function buildPlugins(mode, policyScope) {
   )
 
   plugins.push({
-    id: 'mode-capability-policy', name: 'dsh-agents-modes/capability-policy',
+    id: 'mode-capability-policy', name: 'dsh-agents-models/capability-policy',
     config: { scope: policyScope ?? '', mode: mode.id },
   })
 
@@ -321,7 +321,7 @@ async function discoverPlugins(profileDir, activeNames, selfNames) {
  * the package under its pre-open-source name would otherwise see itself.
  */
 export const SELF_PACKAGE_NAMES = Object.freeze([
-  'dsh-agents-modes',
+  'dsh-agents-models',
   '@local/dsh-agent-modes',
 ])
 
@@ -933,6 +933,43 @@ export function validateModes(input) {
   return { value: next }
 }
 
+/**
+ * Preset ids another live Loader row already declares.
+ *
+ * The registry keys presets by id and *throws* on the second registration
+ * (`Duplicate agent preset: work-fish`), and the plugin that loads first wins —
+ * the loser is not "reported", it is simply absent from the roster. A shipped
+ * template that happened to reuse an id from a bundle would therefore delete that
+ * bundle's preset in silence, which is exactly what `work-fish` collided with:
+ * `dsh-work-fish`'s own `cordis.patch.yml` inserts `preset-work-fish` whose
+ * `config.id` is `work-fish`, the same id this plugin's template used.
+ *
+ * Reading the ids off the live tree (rather than off the profile's YAML) is what
+ * makes the check honest: a row that is disabled, absent, or replaced by an
+ * operator override is not on the tree and does not reserve its id.
+ *
+ * @param loader the Loader service, if the host exposes one.
+ * @returns the preset ids those rows declare.
+ */
+export function declaredPresetIds(loader) {
+  const ids = new Set()
+  try {
+    for (const entry of loader?.entries?.() ?? []) {
+      const options = entry?.options
+      if (options?.group === true) continue
+      // Only a row mounting the preset registry contributes a preset id, and it
+      // contributes exactly its `config.id`.
+      if (typeof options?.name !== 'string' || !/dsh-agent-preset$/.test(options.name)) continue
+      const id = options?.config?.id
+      if (typeof id === 'string' && id.trim() !== '') ids.add(id.trim())
+    }
+  } catch {
+    // An absent or unreadable tree reserves nothing: the template then registers,
+    // and the registry's own diagnostic reports the collision if there is one.
+  }
+  return ids
+}
+
 export async function apply(root, rawConfig) {
   const profileKey = root.get('profileContext')?.dir
   // A built-in mode whose `requires` package is absent is skipped rather than
@@ -943,6 +980,13 @@ export async function apply(root, rawConfig) {
     if (typeof template.requires !== 'string') { available.add(template.id); continue }
     if (typeof profileKey === 'string' && profileKey !== '' && await installedPackage(profileKey, template.requires)) available.add(template.id)
   }
+  // A template whose preset id another mounted row already owns steps aside. The
+  // registry would throw on the duplicate and the earlier plugin would keep the
+  // id, so registering anyway means losing to a warning nobody reads — or, worse,
+  // winning it and deleting the other plugin's preset. `dsh-work-fish` ships
+  // `preset-work-fish` (`config.id: work-fish`), which is why this exists.
+  const reservedIds = declaredPresetIds(root.get('loader'))
+  for (const id of reservedIds) available.delete(id)
   // Shipped templates plus the operator's field-level overrides. A legacy
   // profile (one that stored whole modes) is returned untouched, so upgrading
   // the plugin never rewrites a mode list that was already in use; the page
@@ -982,6 +1026,13 @@ export async function apply(root, rawConfig) {
 
       modes.forEach((mode, index) => {
         if (typeof mode?.id !== 'string' || mode.id.trim() === '') return
+        // `reservedIds` was read before this plugin's own rows registered, so a
+        // stale entry cannot make the mode skip its own registration; if the id is
+        // still taken by the time the registry answers, the catch below reports it.
+        if (reservedIds.has(mode.id)) {
+          ctx.logger?.info?.(`agent-modes: mode "${mode.id}" is left to the plugin that already declares that preset id`)
+          return
+        }
         Promise.resolve()
           .then(() => registry.register(buildDefinition(mode, index, policyScope.id)))
           .then((dispose) => { if (typeof dispose === 'function') unregisters.push(dispose) })
@@ -1052,7 +1103,7 @@ export async function apply(root, rawConfig) {
       const collect = (rows) => {
         for (const row of rows) {
           if (row.group === true) collect(row.config ?? [])
-          else if (typeof row.name === 'string' && !row.name.startsWith('dsh-agents-modes/') && !row.name.startsWith('cordis:')) packages.add(row.name)
+          else if (typeof row.name === 'string' && !row.name.startsWith('dsh-agents-models/') && !row.name.startsWith('cordis:')) packages.add(row.name)
         }
       }
       if (scope === 'mode') for (const mode of selected) collect(buildPlugins(mode))
@@ -1172,7 +1223,7 @@ export async function apply(root, rawConfig) {
             disabled: [...policy.denied], events: policy.events, sessions: sessionCapabilities(id),
           }])),
           implicit: [...BASE_ROWS, { id: 'persona', name: '@deepseek-ai/dsh-persona' },
-            { id: 'mode-capability-policy', name: 'dsh-agents-modes/capability-policy' }],
+            { id: 'mode-capability-policy', name: 'dsh-agents-models/capability-policy' }],
           live: await liveRoster(),
           // Which mode a *new* task starts on. The registry owns it, so the page
           // reads it here instead of guessing from the roster order.

@@ -230,7 +230,7 @@ test('a session id is required, and an unknown one reports the host error rather
 test('a corrupt ledger file is reported, and the route still answers', async (t) => {
   const home = await fixture(t)
   await withHome(home, async () => {
-    const path = join(home, 'plugins-data', 'dsh-agents-modes', 'session-spend.json')
+    const path = join(home, 'plugins-data', 'dsh-agents-models', 'session-spend.json')
     await mkdir(dirname(path), { recursive: true })
     await writeFile(path, 'not json at all', 'utf8')
     const sessions = { s: [] }

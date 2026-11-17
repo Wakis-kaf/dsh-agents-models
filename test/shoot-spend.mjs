@@ -93,7 +93,7 @@ const EXTENSIONS = {
     }],
     stateBroken: false,
     ledger: {
-      path: 'C:\\Users\\EDY\\.dsh\\plugins-data\\dsh-agents-modes\\session-spend.json',
+      path: 'C:\\Users\\EDY\\.dsh\\plugins-data\\dsh-agents-models\\session-spend.json',
       exists: true,
       sessions: [
         { sessionId: 'session-d45e8969-cc0a-49c4-9933-9e98b96937a2', credit: 18.46, updatedAt: 1794909543583 },

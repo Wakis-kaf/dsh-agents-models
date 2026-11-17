@@ -14,7 +14,7 @@
  * tool names dynamically is reported as having no declared tools — the editor
  * still lets the operator mount the package.
  *
- * @module dsh-agents-modes/plugin-tools
+ * @module dsh-agents-models/plugin-tools
  */
 
 import { readdir, readFile } from 'node:fs/promises'

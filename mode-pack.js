@@ -75,7 +75,7 @@ export async function exportModePack({ modes, profileDir, packages = [], scope =
   const dependencies = new Map()
   const budget = { bytes: 0, files: 0 }
   async function add(rawName, spec, fromDir = profileDir) {
-    if (typeof rawName !== 'string' || rawName.startsWith('cordis:') || rawName.startsWith('dsh-agents-modes/')) return
+    if (typeof rawName !== 'string' || rawName.startsWith('cordis:') || rawName.startsWith('dsh-agents-models/')) return
     const name = pluginPackage(rawName)
     if (!PACKAGE.test(name)) throw new Error(`Unsupported package: ${rawName}`)
     let installed = await resolveInstalledPackage(fromDir, name) ?? await installedPackage(profileDir, name)
@@ -203,10 +203,10 @@ export async function analyzeModePack(raw, { profileDir, modes, catalog, hostPac
       const row = catalog.find((item) => item.id === id)
       const visit = (value) => {
         if (value?.group) for (const child of value.config ?? []) visit(child)
-        else if (typeof value?.name === 'string' && !value.name.startsWith('cordis:') && !value.name.startsWith('dsh-agents-modes/')) required.add(pluginPackage(value.name))
+        else if (typeof value?.name === 'string' && !value.name.startsWith('cordis:') && !value.name.startsWith('dsh-agents-models/')) required.add(pluginPackage(value.name))
       }
       if (typeof row?.row === 'object') visit(row.row)
-      else if (row?.pkg && !row.pkg.startsWith('dsh-agents-modes/') && !row.pkg.startsWith('cordis:')) required.add(pluginPackage(row.pkg))
+      else if (row?.pkg && !row.pkg.startsWith('dsh-agents-models/') && !row.pkg.startsWith('cordis:')) required.add(pluginPackage(row.pkg))
     }
     for (const name of required) if (!pack.dependencies.some((dep) => dep.name === name)) {
       if (!hostPackages.includes(name) && !await installedPackage(profileDir, name)) errors.push(`Missing dependency declaration: ${name}`)

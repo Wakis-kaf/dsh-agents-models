@@ -13,7 +13,7 @@
  * the persona suffix, which is the only supported way to bias tool choice —
  * `systemPrompt.toolOrder` is host-plane config and a preset cannot set it.
  *
- * @module dsh-agents-modes/catalog
+ * @module dsh-agents-models/catalog
  */
 
 /** Tool categories, in editor display order. */
@@ -556,7 +556,7 @@ export const TOOLS = Object.freeze([
   },
   {
     id: 'tool-unity',
-    pkg: 'dsh-agents-modes/unity',
+    pkg: 'dsh-agents-models/unity',
     row: 'unity-bridge',
     config: { url: 'http://127.0.0.1:8080/mcp', timeoutMs: 60_000 },
     params: UNITY_PARAMS,
@@ -611,7 +611,7 @@ export const TOOLS = Object.freeze([
   },
   {
     id: 'workbuddy-guard',
-    pkg: 'dsh-agents-modes/guard',
+    pkg: 'dsh-agents-models/guard',
     row: 'workbuddy-guard',
     config: {
       provider: 'workbuddy',
@@ -632,7 +632,7 @@ export const TOOLS = Object.freeze([
   },
   {
     id: 'workbuddy-guard-strict',
-    pkg: 'dsh-agents-modes/guard',
+    pkg: 'dsh-agents-models/guard',
     row: 'workbuddy-guard-strict',
     config: {
       provider: 'workbuddy',

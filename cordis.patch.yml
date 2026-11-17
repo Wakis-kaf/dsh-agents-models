@@ -12,6 +12,6 @@
 # persona row beside it would register the same section twice.
 - insert:
     - id: agent-modes
-      name: 'dsh-agents-modes'
+      name: 'dsh-agents-models'
       config:
         templates: builtin

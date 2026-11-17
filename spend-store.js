@@ -12,7 +12,7 @@
  * because it is the one piece of state this extension owns on disk and a reader
  * may need to inspect or delete it by hand.
  *
- * @module dsh-agents-modes/spend-store
+ * @module dsh-agents-models/spend-store
  */
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
@@ -30,7 +30,7 @@ export const LEDGER_SESSIONS_MAX = 200
 /** Absolute path of the ledger for the current host home. */
 export function ledgerPath(home) {
   const root = home ?? process.env.DSH_HOME?.trim() ?? join(homedir(), '.dsh')
-  return join(root, 'plugins-data', 'dsh-agents-modes', 'session-spend.json')
+  return join(root, 'plugins-data', 'dsh-agents-models', 'session-spend.json')
 }
 
 /**

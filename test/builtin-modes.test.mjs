@@ -36,7 +36,7 @@ function harness(options = {}) {
     },
     connection: { fetch: { register: (spec) => { routes.set(spec.path, spec.fetch); return () => {} } } },
     configEditor: { edit: async (_entry, fn) => { writes.push(fn(options.config ?? {})) } },
-    loader: { entries: () => [] },
+    loader: { entries: () => options.rows ?? [] },
     agents: { list: () => [] },
   }
   const ctx = {
@@ -51,6 +51,58 @@ function harness(options = {}) {
 }
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 10))
+
+test('a template whose preset id another mounted row owns steps aside', async () => {
+  // The collision this locks down: dsh-work-fish's own cordis.patch.yml inserts
+  // `preset-work-fish` with `config.id: work-fish`, and this plugin used to ship a
+  // template with that exact id. The registry throws `Duplicate agent preset` on
+  // the second registration and the earlier plugin keeps the id, so one of the two
+  // presets disappeared with nothing but a warning in the log.
+  const { mkdtemp, mkdir, writeFile } = await import('node:fs/promises')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const dir = await mkdtemp(join(tmpdir(), 'agent-modes-collide-'))
+  await mkdir(join(dir, 'node_modules', 'dsh-work-fish'), { recursive: true })
+  await writeFile(join(dir, 'node_modules', 'dsh-work-fish', 'package.json'),
+    JSON.stringify({ name: 'dsh-work-fish', version: '0.2.1' }))
+
+  const rows = [{
+    options: { id: 'preset-work-fish', name: '@deepseek-ai/dsh-agent-preset', config: { id: 'work-fish', name: '大肥鱼' } },
+  }]
+  const h = harness({ config: { templates: 'builtin' }, rows })
+  h.ctx.get = (name) => (name === 'profileContext' ? { dir } : h.ctx[name])
+  await apply(h.ctx, { templates: 'builtin' })
+  await settle()
+
+  const ids = h.registered.map((definition) => definition.id)
+  assert.equal(ids.includes('work-fish'), false, 'the template must yield the id to the bundle')
+  assert.ok(ids.includes('workfish'), 'the mode that does not collide still registers')
+  assert.ok(ids.includes('flash'))
+
+  // And it survives the registry check the host actually runs.
+  assert.deepEqual(ids.filter((id, i) => ids.indexOf(id) !== i), [], 'no duplicate preset id was registered')
+
+  // The id is only reserved while *that* row is on the tree: a profile where the
+  // bundle is disabled keeps this plugin's own mode.
+  const free = harness({ config: { templates: 'builtin' }, rows: [] })
+  free.ctx.get = (name) => (name === 'profileContext' ? { dir } : free.ctx[name])
+  await apply(free.ctx, { templates: 'builtin' })
+  await settle()
+  assert.ok(free.registered.map((definition) => definition.id).includes('work-fish'),
+    'with no bundle row the template must register normally')
+})
+
+test('declaredPresetIds reads preset rows off the live tree', async () => {
+  const { declaredPresetIds } = await import('../index.js')
+  const ids = declaredPresetIds({ entries: () => [
+    { options: { id: 'preset-work-fish', name: '@deepseek-ai/dsh-agent-preset', config: { id: 'work-fish' } } },
+    { options: { id: 'other', name: 'some-other-plugin', config: { id: 'not-a-preset' } } },
+    { options: { id: 'grp', group: true, config: { id: 'ignored' } } },
+    { options: { id: 'blank', name: '@deepseek-ai/dsh-agent-preset', config: {} } },
+  ] })
+  assert.deepEqual([...ids], ['work-fish'])
+  assert.equal(declaredPresetIds(undefined).size, 0)
+})
 
 test('shipped templates are internally consistent', () => {
   assert.equal(new Set(BUILTIN_IDS).size, BUILTIN_IDS.length, 'duplicate template id')
@@ -69,10 +121,53 @@ test('shipped templates are internally consistent', () => {
       assert.ok((template.plugins ?? []).includes(name), `${template.id} configures an unlisted plugin`)
     }
   }
-  // Only the Work Fish template takes its prompt section from its own plugin.
+  // Both Work Fish templates take their prompt section from their own plugin:
+  // mounting the stock persona row beside `dsh-work-fish/core/persona` would
+  // register `deployment:persona-prefix` twice in one scope.
   const noPersona = BUILTIN_TEMPLATES.filter((template) => template.persona === false).map((template) => template.id)
-  assert.deepEqual(noPersona, ['work-fish'])
+  assert.deepEqual(noPersona, ['work-fish', 'workfish'])
   assert.equal(templateById('work-fish').requires, 'dsh-work-fish')
+  assert.equal(templateById('workfish').requires, 'dsh-work-fish')
+})
+
+test('the WorkFish mode composes what the bare Work Fish mode leaves out', () => {
+  const lean = templateById('work-fish')
+  const full = templateById('workfish')
+
+  // The package's own bundle installs `work-fish-host` and `work-fish-approve`
+  // as *global* rows. Mounting either inside a preset would register the same
+  // `/wf/*` exact route (or the same approval listener) a second time, so the
+  // preset must name neither.
+  for (const template of [lean, full]) {
+    for (const name of template.plugins) {
+      assert.notEqual(name, 'dsh-work-fish', `${template.id} mounts the global board row inside a preset`)
+      assert.notEqual(name, 'dsh-work-fish/core/approve', `${template.id} mounts the global approval row inside a preset`)
+    }
+  }
+
+  // What actually differs is the tool surface, and it differs on purpose: the
+  // full mode follows upstream's 「大肥鱼」 preset and adds delegation.
+  for (const id of ['tool-subagent', 'tool-subagent-fork', 'tool-subagent-control']) {
+    assert.ok(full.tools.includes(id), `workfish is missing the delegation row ${id}`)
+    assert.equal(lean.tools.includes(id), false)
+  }
+  assert.ok(full.tools.includes('tool-web') && full.tools.includes('tool-skill'))
+
+  // No `config` block: a per-row override is only accepted for a declared
+  // parameter, and none of the rows this mode mounts declares one. A config here
+  // would make the shipped mode unsavable in the editor.
+  assert.equal(full.config, undefined)
+  assert.equal(validateModes([{ ...full }]).error, undefined, 'the shipped mode is not savable')
+})
+
+test('exclusive tool rows are never paired by a shipped template', () => {
+  for (const template of BUILTIN_TEMPLATES) {
+    for (const id of template.tools) {
+      for (const rival of TOOL_BY_ID[id].exclusiveWith ?? []) {
+        assert.equal(template.tools.includes(rival), false, `${template.id} pairs ${id} with ${rival}`)
+      }
+    }
+  }
 })
 
 test('a legacy profile is passed through untouched', () => {

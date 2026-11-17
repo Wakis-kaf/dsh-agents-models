@@ -81,7 +81,7 @@ test('catalog rows are internally consistent', () => {
     assert.ok(
       tool.pkg.startsWith('@deepseek-ai/') ||
         tool.pkg.startsWith('cordis:') ||
-        tool.pkg.startsWith('dsh-agents-modes/'),
+        tool.pkg.startsWith('dsh-agents-models/'),
       `${tool.id} has an unusable package ${tool.pkg}`,
     )
   }
@@ -187,7 +187,7 @@ test('the WorkBuddy guard mounts as an infra row', () => {
   const rows = buildPlugins({ id: 'x', tools: ['workbuddy-guard'] })
   const guard = rows.find((row) => row.id === 'workbuddy-guard')
   assert.ok(guard, 'guard row missing')
-  assert.equal(guard.name, 'dsh-agents-modes/guard')
+  assert.equal(guard.name, 'dsh-agents-models/guard')
   assert.equal(guard.config.provider, 'workbuddy')
   assert.equal(guard.config.maxJobWaitMs, 30_000)
   assert.equal(guard.config.denyRepeats, true)
@@ -226,7 +226,7 @@ test('the WorkBuddy Flash mode mounts its strict guard and lean tool set', () =>
   )
   assert.equal(persistent.config[2].name, '@deepseek-ai/dsh-tool-pwsh-persistent')
   const guard = rows.find((row) => row.id === 'workbuddy-guard-strict')
-  assert.equal(guard.name, 'dsh-agents-modes/guard')
+  assert.equal(guard.name, 'dsh-agents-models/guard')
   // Bounded, not tight: 30 bought one blind write, 60 bought nine honest cycles
   // and no room to finish. The speed lever is the persona's round cap, not this.
   assert.equal(guard.config.maxToolSteps, 120)
@@ -303,7 +303,7 @@ test('the Unity row mounts the bridge, not the 48-tool MCP client', () => {
   const rows = buildPlugins({ id: 'unity', tools: ['tool-unity'] })
   const row = rows.find((entry) => entry.id === 'unity-bridge')
   assert.ok(row, 'the unity bridge row is missing')
-  assert.equal(row.name, 'dsh-agents-modes/unity')
+  assert.equal(row.name, 'dsh-agents-models/unity')
   assert.equal(row.config.url, 'http://127.0.0.1:8080/mcp')
   assert.equal(entryListProblem(rows), undefined)
 })
@@ -547,7 +547,7 @@ test('the roster route reports modes, catalog, categories, and plugins', async (
       'a non-plugin dependency leaked into the inventory',
     )
     assert.deepEqual(
-      plugins.filter((p) => p.name === 'dsh-agents-modes'),
+      plugins.filter((p) => p.name === 'dsh-agents-models'),
       [],
       'the mode editor must not offer to mount itself inside a preset',
     )

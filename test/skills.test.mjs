@@ -9,7 +9,7 @@ import { mkdtemp, readFile, rm, writeFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-process.env.DSH_HOME = await mkdtemp(join(tmpdir(), 'dsh-agents-modes-skills-'))
+process.env.DSH_HOME = await mkdtemp(join(tmpdir(), 'dsh-agents-models-skills-'))
 
 const {
   DEFAULT_CATEGORY,
@@ -42,7 +42,7 @@ test.after(async () => {
  * only way to keep one test's written files out of another's.
  */
 async function freshHome() {
-  const home = await mkdtemp(join(tmpdir(), 'dsh-agents-modes-case-'))
+  const home = await mkdtemp(join(tmpdir(), 'dsh-agents-models-case-'))
   HOMES.push(home)
   process.env.DSH_HOME = home
   return home

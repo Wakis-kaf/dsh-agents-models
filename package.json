@@ -1,6 +1,6 @@
 {
-  "name": "dsh-agents-modes",
-  "version": "1.3.0",
+  "name": "dsh-agents-models",
+  "version": "1.4.0",
   "description": "Leiting \u2014 define DeepSeek Harness agent modes as real presets: per-mode persona, tool set, and plugin mounts, with a pure mode that starts with no capability at all.",
   "type": "module",
   "license": "MIT",
@@ -63,6 +63,10 @@
         "@deepseek-ai/dsh-client-ui-agent-preset"
       ]
     }
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "~4.1.0",

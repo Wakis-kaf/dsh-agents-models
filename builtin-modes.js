@@ -21,7 +21,7 @@
  *   written is reported as a conflict and *still* keeps the operator's value —
  *   the page offers "adopt upstream" rather than deciding for them.
  *
- * @module dsh-agents-modes/builtin-modes
+ * @module dsh-agents-models/builtin-modes
  */
 
 import { createHash } from 'node:crypto'
@@ -223,6 +223,13 @@ export const BUILTIN_TEMPLATES = Object.freeze([
     description:
       '基于 dsh-work-fish 的工作助手：任务板、台账、收工交付与该包的守卫/技能随包升级，工具面由雷霆决定。需要先安装 dsh-work-fish。',
     requires: 'dsh-work-fish',
+    // Collides by preset id with the package's own bundle: its `cordis.patch.yml`
+    // inserts `preset-work-fish` with `config.id: work-fish`. The registry throws
+    // `Duplicate agent preset` on the second registration and the first loader
+    // wins, so `apply()` skips any template whose id another live row already
+    // declares (see `declaredPresetIds` in index.js). The upstream preset is the
+    // richer one there; `workfish` below is this plugin's own composition and does
+    // not collide.
     // The package owns the prompt section (`deployment:persona-prefix`); mounting
     // the stock persona row beside it throws "already registered in this scope".
     persona: false,
@@ -249,6 +256,51 @@ export const BUILTIN_TEMPLATES = Object.freeze([
     pluginConfig: {
       'dsh-work-fish/core/persona': { complete: true },
     },
+  },
+  {
+    id: 'workfish',
+    name: 'WorkFish',
+    description:
+      '按 dsh-work-fish 上游「大肥鱼」预设的工具面组合：persona 骨架 + 写守卫 + 技能库，再加上子智能体三件套（subagent / subagent_fork / subagent_control）。任务板与 /wf 面板由该包安装时插入的全局行提供，不需要在这里挂。需要先安装 dsh-work-fish。',
+    requires: 'dsh-work-fish',
+    // Same reason as `work-fish`: `core/persona` owns `deployment:persona-prefix`.
+    persona: false,
+    tools: [
+      'fs-observation-policy',
+      'tool-fs',
+      'tool-fs-search',
+      'tool-pwsh',
+      'tool-jobs',
+      'tool-schedule',
+      'tool-todo',
+      'tool-ask-user',
+      'tool-web',
+      'tool-skill',
+      'tool-subagent-control',
+      'tool-subagent',
+      'tool-subagent-fork',
+      'present',
+      'compaction',
+    ],
+    // Only the package's *per-session* rows. The bare package row and
+    // `core/approve` are inserted as global rows by the package's own
+    // `cordis.patch.yml` at install time: they serve `/wf/*` and answer
+    // escalations once for the whole host. Mounting either inside a preset would
+    // register the same exact route (or the same approval listener) a second
+    // time, so this mode leans on the global rows instead of duplicating them.
+    plugins: [
+      'dsh-work-fish/core/persona',
+      'dsh-work-fish/core/guard',
+      'dsh-work-fish/core/skills',
+    ],
+    pluginConfig: {
+      'dsh-work-fish/core/persona': { complete: true },
+    },
+    // No `config:`. A per-row override is only accepted for a key the catalog row
+    // declares as a parameter, and `tool-fs` / `tool-web` declare none — writing
+    // one here would make the whole mode unsavable ("「文件读写与看图」没有可调参数").
+    // Upstream's token caps come from the *global* row the package patches in, so
+    // the board session still inherits them.
   },
 ])
 

@@ -9,7 +9,7 @@
  *
  * Two records, both plain JSON:
  *
- * - the category store at `~/.dsh/plugins-data/dsh-agents-modes/skill-categories.json`,
+ * - the category store at `~/.dsh/plugins-data/dsh-agents-models/skill-categories.json`,
  *   holding the category list and the per-skill assignment;
  * - a skill pack, `{ format, version, skills: [...] }`, which the page downloads
  *   and uploads. A pack carries the body only: frontmatter is regenerated on
@@ -20,7 +20,7 @@
  * read, so a skill that vanished keeps its assignment (harmless) and a skill
  * that appeared lands in an auto-derived category instead of an undefined one.
  *
- * @module dsh-agents-modes/skill-store
+ * @module dsh-agents-models/skill-store
  */
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
@@ -102,7 +102,7 @@ export function autoCategory(skill) {
 /** Absolute path of the category store for the current host home. */
 export function storePath(home) {
   const root = home ?? process.env.DSH_HOME?.trim() ?? join(homedir(), '.dsh')
-  return join(root, 'plugins-data', 'dsh-agents-modes', 'skill-categories.json')
+  return join(root, 'plugins-data', 'dsh-agents-models', 'skill-categories.json')
 }
 
 /** Absolute path of the writable skill root (`~/.dsh/skills`). */

@@ -12,7 +12,7 @@
  * callId, `step/end` is the counted step, and `assistant/message` carries the
  * provider usage record.
  *
- * @module dsh-agents-modes/stats
+ * @module dsh-agents-models/stats
  */
 
 /** Coerce anything to a non-negative finite number. */

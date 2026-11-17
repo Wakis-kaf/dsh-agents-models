@@ -275,7 +275,7 @@ test('recentSessions orders by the time it was last seen', () => {
 })
 
 test('ledgerPath lives under this plugin own data directory', () => {
-  assert.match(ledgerPath('/home/x'), /plugins-data[\\/]dsh-agents-modes[\\/]session-spend\.json$/)
+  assert.match(ledgerPath('/home/x'), /plugins-data[\\/]dsh-agents-models[\\/]session-spend\.json$/)
 })
 
 // ── the extension registry ─────────────────────────────────────────────────
@@ -347,5 +347,5 @@ test('the registry is data: every entry carries the copy the card renders', () =
 })
 
 test('statePath lives beside the ledger, under this plugin own data directory', () => {
-  assert.match(statePath('/home/x'), /plugins-data[\\/]dsh-agents-modes[\\/]extensions\.json$/)
+  assert.match(statePath('/home/x'), /plugins-data[\\/]dsh-agents-models[\\/]extensions\.json$/)
 })

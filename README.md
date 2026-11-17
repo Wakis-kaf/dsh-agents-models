@@ -4,7 +4,7 @@ A DeepSeek Harness plugin that makes an agent **mode** a real agent preset: its 
 persona, its own tool set, its own plugin mounts. Pick a mode for a new task and the
 session is composed exactly that way — nothing inherited, nothing accidental.
 
-Ships four modes out of the box:
+Ships six modes out of the box:
 
 | Mode | Mounts by default |
 |---|---|
@@ -12,6 +12,14 @@ Ships four modes out of the box:
 | **WorkBuddy Flash** | persona + file read/write + read-before-write policy + code search + persistent PowerShell + background jobs + ask-user + todo + present + compaction + the strict WorkBuddy guard; no web/skills |
 | **Unity** | persona + the two-tool Unity Editor bridge + file read/write + read-before-write policy + code search + PowerShell + jobs + todo + ask-user + present + compaction |
 | **Flash Pure** | persona + compaction. **No tools. No plugins.** |
+| **Work Fish** | Work Fish's own persona, write guard and skill library, with this plugin's tool surface. Needs `dsh-work-fish`. |
+| **WorkFish** | The same three Work Fish rows plus delegation (`subagent`, `subagent_fork`, `subagent_control`), following upstream's own 「大肥鱼」 tool list. Needs `dsh-work-fish`. |
+
+The two Work Fish modes differ in **tool surface only**. Both leave the task board,
+the ledger and the `/wf/*` panel to the global rows `dsh-work-fish` installs with
+itself: those serve a whole host once, so mounting them inside a preset would
+register the same route twice. See
+[基于 dsh-work-fish 的两个内置模式](#基于-dsh-work-fish-的两个内置模式).
 
 Flash also mounts `workbuddy-guard`, a transparent tool-call guard described
 below. WorkBuddy Flash mounts the strict variant instead. Neither adds a
@@ -288,7 +296,7 @@ package the mode mounts (a subpath row counts) plus the names in its `skills`
 allowlist. Each row keeps its provenance tag next to the name, so a filtered
 list still says whose package a skill belongs to.
 
-**Categories** live in `~/.dsh/plugins-data/dsh-agents-modes/skill-categories.json`:
+**Categories** live in `~/.dsh/plugins-data/dsh-agents-models/skill-categories.json`:
 
 ```json
 {
@@ -406,7 +414,7 @@ and start time but **no port** — neither is a durable store.
 
 | Figure | Source | Survives a restart |
 |---|---|---|
-| credits | the connector's `usage.credit`, committed to `~/.dsh/plugins-data/dsh-agents-modes/session-spend.json` | yes — the file |
+| credits | the connector's `usage.credit`, committed to `~/.dsh/plugins-data/dsh-agents-models/session-spend.json` | yes — the file |
 | yuan (≈) | folded out of the durable session log on every read | yes — the log |
 
 The credit merge is the part that needed care. Each entry keeps
@@ -445,7 +453,7 @@ number in one row is worse than none). The readout polls its own local route eve
 `/api/agent-modes/extensions` serves the registry and flips one entry; the switch
 is enforced **on the host**, so turning it off stops the work (no ledger write, no
 connector read, no log fold), not just the pixels. State lives in
-`~/.dsh/plugins-data/dsh-agents-modes/extensions.json`. An unknown id in the file
+`~/.dsh/plugins-data/dsh-agents-models/extensions.json`. An unknown id in the file
 cannot resurrect, and a missing id falls back to the shipped default (on).
 
 ## Unity mode
@@ -461,7 +469,7 @@ that list is **48 tools / 109 078 bytes**, re-sent on every step. Its own
 (`manage_gameobject` vs `manage_components` vs `manage_prefabs` vs
 `manage_scene`), which is exactly the choice surface a fast model wanders in.
 
-`dsh-agents-modes/unity` is a two-tool bridge over the same server:
+`dsh-agents-models/unity` is a two-tool bridge over the same server:
 
 | Tool | What it does | Schema |
 |---|---|---|
@@ -499,7 +507,7 @@ done.
 Two parameters: `url` (string, the endpoint) and `timeoutMs` (default 60 s).
 Both live in the mode's **Parameters** tab.
 
-The bridge is `unity.js`, exported as `dsh-agents-modes/unity`. Its offline
+The bridge is `unity.js`, exported as `dsh-agents-models/unity`. Its offline
 tests run against a fake MCP server that reproduces the real server's session
 handshake and nested `content[].text` payloads:
 
@@ -527,7 +535,7 @@ session is on this mode, so only new tasks pick this up."*
 
 ## 内置模式的升级与你的改动
 
-插件的四个内置模式**不再存在 profile 配置里**。原因是一个这个插件已经踩过的坑：
+插件的六个内置模式**不再存在 profile 配置里**。原因是一个这个插件已经踩过的坑：
 
 - 包里的 `cordis.patch.yml` 只在第一次加载时插入一条 `agent-modes` 行；
 - 页面上点一次保存，`/api/agent-modes/save` 会把**整份模式列表**写进 profile 的 `cordis.patch.yml`；
@@ -540,7 +548,7 @@ session is on this mode, so only new tasks pick this up."*
 
 | 层 | 存在哪里 | 谁改得动 |
 |---|---|---|
-| 内置模板（`flash` / `workbuddy-flash` / `unity` / `flash-pure` / `work-fish`） | 包内 `builtin-modes.js` | `npm update` |
+| 内置模板（`flash` / `workbuddy-flash` / `unity` / `flash-pure` / `work-fish` / `workfish`） | 包内 `builtin-modes.js` | `npm update` |
 | 你的改动 | profile 的 `overrides`，按**字段**存 | 你，在页面上 |
 | 你自建的模式 | profile 的 `modes`，整份存 | 你 |
 
@@ -563,9 +571,9 @@ session is on this mode, so only new tasks pick this up."*
 **上一次 roster 里出现过**的模式才算删除，所以一个没刷新过模式列表的旧标签页保存时，
 不会顺手把没见过的模式删掉。
 
-## 基于 dsh-work-fish 的 Work Fish 模式
+## 基于 dsh-work-fish 的两个内置模式
 
-`work-fish` 是一个**依赖式**内置模式：它不复制 `dsh-work-fish` 的任何代码，
+`work-fish` 和 `workfish` 都是**依赖式**内置模式：它们不复制 `dsh-work-fish` 的任何代码，
 只按包名挂载那个包自己的行：
 
 ```js
@@ -573,17 +581,65 @@ plugins: ['dsh-work-fish/core/persona', 'dsh-work-fish/core/guard', 'dsh-work-fi
 pluginConfig: { 'dsh-work-fish/core/persona': { complete: true } },
 ```
 
-因此 `dsh-work-fish` 升级（persona 骨架、守卫、技能库）会直接作用到这个模式，
+因此 `dsh-work-fish` 升级（persona 骨架、守卫、技能库）会直接作用到这两个模式，
 雷霆这边不需要跟着发版。雷霆只负责**组合**：工具面是本模式自己的列表。
 
 两条边界要说清楚：
 
-- 这个模式**要求已安装** `dsh-work-fish`。没装时它不出现，也不会注册一个挂不上的预设。
+- 这两个模式都**要求已安装** `dsh-work-fish`。没装时它们不出现，也不会注册一个挂不上的预设。
   装上后下次启动才出现。
-- 它跟随的是包的**模块**，不是那个包的预设编排。上游哪天在「大肥鱼」预设里改了工具组合，
-  这个模式不会自动跟——要跟就改这里的 `tools`。
+- 它们跟随的是包的**模块**，不是那个包的预设编排。`workfish` 的 `tools` 是照上游
+  「大肥鱼」抄的一份**快照**；上游改了工具组合它不会自动跟，要跟就改这里的 `tools`。
 
-`dsh-work-fish` 自带「大肥鱼」预设，两者可以并存：同一台机器上选哪个由你决定。
+`dsh-work-fish` 自带「大肥鱼」预设，三个可以并存：同一台机器上选哪个由你决定。
+
+### Work Fish 与 WorkFish 的分工（v1.4.0）
+
+| | `work-fish`（Work Fish） | `workfish`（WorkFish） |
+|---|---|---|
+| 挂载的包内行 | `core/persona` + `core/guard` + `core/skills` | 同左 |
+| 工具面 | 雷霆的常规集合，12 行 | 前者 + 子智能体三件套（`subagent` / `subagent_fork` / `subagent_control`），15 行 |
+| 任务板 / 台账 / `/wf` 面板 | 由包自身的**全局行**提供 | 同左 |
+| 自动审批 | 由包自身的**全局行**提供 | 同左 |
+
+唯一的差别是**编排能力**：`workfish` 能派子智能体，`work-fish` 不能。除此之外两个模式的
+行、人设、守卫、技能库完全一致。
+
+两条都是**依赖式**模板，`requires: 'dsh-work-fish'`：包没装就不出现。
+
+**为什么不把包根行挂进预设。** `dsh-work-fish` 的 `cordis.patch.yml` 在安装时插入的是三条行：
+
+```
+preset-work-fish   → 「大肥鱼」预设声明
+work-fish-host     → lib/core/index.mjs，服务 /wf/tasks、/wf/events、/wf/info …
+work-fish-approve  → core/approve.mjs，代答沙箱升级
+```
+
+后两条是**全局行**，一个宿主只跑一份：`/wf/*` 是 `kind: 'exact'` 路由，同路径注册两次会冲突；`core/approve` 挂在全局的 `tools/pre-execute` 与 `approval/request` 上，挂两份会给同一次调用回两次判定。所以两个模式都只挂**每会话**的那三条子路径行，任务板和面板靠包自带的全局行——这也正是它们能在模式里用上面板的原因：全局行与本插件无关，装包就有。
+
+**预设 id 冲突，以及为什么要让位。** 上游 bundle 插入的 `preset-work-fish` 声明的
+`config.id` 就是 `work-fish`——和本插件 1.3.0 那个模板的 id 一模一样。registry 遇到重复 id
+是**抛错**，不是覆盖：
+
+```js
+// dsh-agent-preset-registry/lib/index.js
+if (this.definitions.has(definition.id)) throw new Error(`Duplicate agent preset: ${definition.id}`)
+```
+
+两个都装、都加载，先加载的一方拿住这个 id，另一方只剩一行 warn，界面上那个预设直接消失。
+所以 `apply()` 现在先读**运行中 Loader 树**上每条 `@deepseek-ai/dsh-agent-preset` 行声明的
+预设 id（`declaredPresetIds`），凡是已被别人占住的，本插件的模板让位、不注册。
+
+- 让位是**按当时树上的行**判断的：bundle 禁用了、没挂上、被 operator 覆盖掉，id 就不被占，
+  模板正常注册。同一次安装里两种状态都测过。
+- 被让位的模板仍然出现在模式的配置页里（它还在模板列表里），只是不注册成交给 registry 的预设
+  ——或者说，注册请求被跳过并在日志里留一行 `is left to the plugin that already declares that preset id`。
+- `workfish` 不冲突：它的 id 是本插件自己的，所以两个模式里它是**永远会注册**的那个。
+
+判断只看运行中 Loader 树上真实的 id，没有额外的配置开关。模板仍留在模板列表里，页面上看得见、
+可以编辑；只是它的预设注册请求被跳过。
+
+**工具面为什么不写 `config`。** 预设里的行级参数只接受 catalog 行**声明为参数**的键；`tool-fs`、`tool-web` 一个都没声明，写上会让整个模式在保存时被拒（`「文件读写与看图」没有可调参数`）。上游那些省 token 的硬帽（`readLimit`、`grepMaxMatches`、`fetchMaxOutputChars`）来自包自带的全局行，不需要在这里重写。
 
 ## Which mode a new task starts on
 
@@ -708,11 +764,19 @@ ordering is expressed two ways, which reinforce each other:
 
 ## Install
 
+From npm:
+
+```powershell
+dsh plugin --profile <your-profile> add dsh-agents-models
+```
+
+From a local checkout:
+
 ```powershell
 dsh plugin --profile <your-profile> add link:<path-to-this-repo>
 ```
 
-Then add `dsh-agents-modes` to `dsh.profile.bundles` in that profile's `package.json`.
+Then add `dsh-agents-models` to `dsh.profile.bundles` in that profile's `package.json`.
 Restart DeepSeek Harness so the host half loads.
 
 > The browser half reloads on a page refresh, but the **host half only on a restart**.

@@ -511,7 +511,7 @@ function ensureStyles() {
 }
 
 window.__ModuleLoader__.load({
-  id: 'dsh-agents-modes',
+  id: 'dsh-agents-models',
   factory(require) {
     const DICT_EN = {
       "page.managementModules": "Management modules",
@@ -1060,10 +1060,10 @@ window.__ModuleLoader__.load({
     ]
 
     /** localStorage key holding operator edits to the persona templates. */
-    const TEMPLATE_STORE = 'dsh-agents-modes/persona-templates'
+    const TEMPLATE_STORE = 'dsh-agents-models/persona-templates'
 
     /** localStorage key holding sentences the operator added themselves. */
-    const CUSTOM_TEMPLATE_STORE = 'dsh-agents-modes/persona-templates-custom'
+    const CUSTOM_TEMPLATE_STORE = 'dsh-agents-models/persona-templates-custom'
 
     /**
      * Read the operator's saved template text.
@@ -3345,7 +3345,7 @@ window.__ModuleLoader__.load({
         h('details', { key: 'live-capabilities', className: 'lt-card' }, [h('summary', {}, text('运行中会话的真实注册与挂载', 'Live session registrations and mounts')),
           h('p', { className: 'lt-card-hint' }, text('直接读取宿主工具注册表与会话 Loader，不是静态扫描。注册不等于当前步骤已暴露给模型；权限仍按保存的配置判定。', 'Read from host tool registries and session Loaders, not static scans. Registered does not mean admitted to the current model step. Saved policy still controls dispatch.')),
           !(capabilities[mode.id]?.sessions ?? []).length ? h('p', { className: 'lt-empty' }, text('当前没有此模式的运行中会话。', 'No running session for this mode.')) : null,
-          ...(capabilities[mode.id]?.sessions ?? []).map((session) => h('details', { key: session.id }, [h('summary', { className: 'lt-mono' }, `${session.id} · ${session.mounts.includes('dsh-agents-modes/capability-policy') ? text('已发现守卫挂载', 'Guard mount found') : text('未发现守卫，请新建会话', 'Guard not found; start a new session')}`),
+          ...(capabilities[mode.id]?.sessions ?? []).map((session) => h('details', { key: session.id }, [h('summary', { className: 'lt-mono' }, `${session.id} · ${session.mounts.includes('dsh-agents-models/capability-policy') ? text('已发现守卫挂载', 'Guard mount found') : text('未发现守卫，请新建会话', 'Guard not found; start a new session')}`),
             session.registered === null ? h('p', { className: 'lt-card-hint' }, text('此宿主不提供工具注册表读取。', 'This host does not expose tool registry inspection.')) : h('div', { className: 'lt-chips' }, session.registered.map((name) => h('span', { key: name, className: 'lt-chip', 'data-on': String((capabilities[mode.id]?.allowed ?? []).includes(name)) }, `${name} · ${(capabilities[mode.id]?.allowed ?? []).includes(name) ? text('允许', 'Allowed') : text('拦截', 'Denied')}`))),
             h('p', { className: 'lt-mono' }, session.mounts.join(' · ')),
           ])),

@@ -33,7 +33,7 @@
  * DeepSeek routes choose bounded commands (a 16-byte asar header, `grep`, a
  * small benchmark) and must stay untouched.
  *
- * @module dsh-agents-modes/guard
+ * @module dsh-agents-models/guard
  */
 
 import { readFileSync, statSync } from 'node:fs'

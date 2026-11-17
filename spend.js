@@ -25,7 +25,7 @@
  * provider's invoice (which also discounts, rounds and taxes). The readout says
  * ≈ and the page states the table version, so nobody reads it as a bill.
  *
- * @module dsh-agents-modes/spend
+ * @module dsh-agents-models/spend
  */
 
 /** Bumped when a stored ledger from an older reader would be misread. */

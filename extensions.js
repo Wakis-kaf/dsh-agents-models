@@ -14,7 +14,7 @@
  * categories already use, and the reason an extension can be toggled without a
  * host restart.
  *
- * @module dsh-agents-modes/extensions
+ * @module dsh-agents-models/extensions
  */
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
@@ -64,7 +64,7 @@ export function isExtensionId(value) {
 /** Absolute path of the extension state file for the current host home. */
 export function statePath(home) {
   const root = home ?? process.env.DSH_HOME?.trim() ?? join(homedir(), '.dsh')
-  return join(root, 'plugins-data', 'dsh-agents-modes', 'extensions.json')
+  return join(root, 'plugins-data', 'dsh-agents-models', 'extensions.json')
 }
 
 /**
