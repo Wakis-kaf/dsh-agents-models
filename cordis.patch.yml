@@ -1,69 +1,17 @@
 # Agent Modes: one host row owns the mode roster and the config editor.
-# Each entry below becomes a real agent preset; edit them from the
-# "Agent modes" settings page instead of this file.
 #
-# `pure: true` mounts the persona and long-session compaction only — no tools,
-# no plugins. Everything a pure mode can do must be checked on its detail page,
-# where `plugins: []` is the starting point rather than the catalog defaults.
+# The shipped modes are *templates* in `builtin-modes.js`, not a list here.
+# Reason: the profile patch replaces a row's config wholesale, so a mode list
+# written here is copied into the profile on the first save — and from then on
+# the copy wins over every later npm update. `templates: builtin` resolves the
+# shipped templates at load and stores only the fields an operator changed, as
+# per-mode overrides, so a package update still reaches untouched fields.
+#
+# `persona: false` on a template means one of its plugins owns the prompt
+# section (Work Fish ships `dsh-work-fish/core/persona`); mounting the stock
+# persona row beside it would register the same section twice.
 - insert:
     - id: agent-modes
       name: 'dsh-agents-modes'
       config:
-        modes:
-          - id: flash
-            name: Flash
-            description: 精简工具面，响应更快。适合问答、定位、小范围修改；重型重构请切回 standard 或 ops-ptc。
-            tools:
-              - tool-fs
-              - tool-fs-search
-              - tool-pwsh
-              - workbuddy-guard
-              - tool-jobs
-              - tool-web
-              - tool-todo
-              - tool-ask-user
-              - tool-skill
-              - present
-              - compaction
-          - id: workbuddy-flash
-            name: WorkBuddy Flash
-            description: WorkBuddy 专用：低步数、防重复、防大文件扫描。建议模型选 WorkBuddy / DeepSeek-V4.1-Flash / Low，并关闭账号池以保持一致性。
-            tools:
-              - tool-fs
-              - tool-fs-search
-              - tool-pwsh
-              - workbuddy-guard-strict
-              - tool-jobs
-              - tool-ask-user
-              - compaction
-            plugins: []
-            persona: |-
-              你是 WorkBuddy 上的轻量执行代理，目标是少步数、少重复、先结论。严格遵守：
-
-              先判断任务类型：问答、解释、定位类直接回答，不调用工具；只有需要当前仓库事实时才用工具。
-
-              先分清事实和假设：只有工具实测到的才能写成事实；还没验证的只能写成“假设/待验证”，不要用肯定语气。
-
-              遇到版本、路径、配置、性能这类问题，先做一次最小验证再下结论；禁止先断言再补测。
-
-              每一轮开头先用 1-3 条列出已确认事实；不要重新推导已经确认的事实。
-
-              如果准备推翻上一轮结论，必须先指出是哪一条新的实测结果与它冲突；没有新实测就保持原结论并补充证据。
-
-              动手前用一句话写出计划；计划确定后不要反复推翻，除非新的工具结果与它直接冲突。
-
-              每个假设只验证一次；同一条命令、同一个文件不要重复读取。发现自己在重复，立即停止并基于已有信息回答。
-
-              工具预算：简单任务不超过 8 步，复杂任务不超过 20 步；达到预算就总结已知事实并给出结论或明确的下一步，不要继续尝试。
-
-              大文件或二进制只用 grep、read 带 offset，或 Node 读 header；禁止用 PowerShell 全量扫描，禁止提取整个 asar 或包目录。
-
-              回答先给结论，但每条结论必须标注“实测事实”或“假设/待验证”；再给关键证据或改动；不要展示草稿式推导，不要为了“完整”检查未要求的边界。
-
-              如果连续两次工具结果没有带来新信息，停止探索并回答。
-          - id: flash-pure
-            name: Flash Pure
-            description: 纯对话模式。默认不带任何工具与插件，需要什么就到模式详情里手动勾选。
-            pure: true
-            tools: []
-            plugins: []
+        templates: builtin

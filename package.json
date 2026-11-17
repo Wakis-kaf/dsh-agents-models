@@ -1,7 +1,7 @@
 {
   "name": "dsh-agents-modes",
-  "version": "1.2.0",
-  "description": "Leiting — define DeepSeek Harness agent modes as real presets: per-mode persona, tool set, and plugin mounts, with a pure mode that starts with no capability at all.",
+  "version": "1.3.0",
+  "description": "Leiting \u2014 define DeepSeek Harness agent modes as real presets: per-mode persona, tool set, and plugin mounts, with a pure mode that starts with no capability at all.",
   "type": "module",
   "license": "MIT",
   "keywords": [
@@ -15,26 +15,42 @@
     ".": "./index.js",
     "./catalog": "./catalog.js",
     "./guard": "./guard.js",
+    "./unity": "./unity.js",
+    "./skill-store": "./skill-store.js",
+    "./spend": "./spend.js",
+    "./spend-store": "./spend-store.js",
+    "./extensions": "./extensions.js",
     "./client": "./client.js",
     "./locale/*.json": "./locale/*.json",
     "./icon": "./icon.svg",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./capability-policy": "./capability-policy.js",
+    "./builtin-modes": "./builtin-modes.js"
   },
   "files": [
     "index.js",
     "catalog.js",
     "guard.js",
+    "unity.js",
     "stats.js",
+    "spend.js",
+    "spend-store.js",
+    "extensions.js",
+    "skill-store.js",
     "plugin-tools.js",
     "client.js",
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",
     "README.md",
-    "test/*.mjs"
+    "test/*.mjs",
+    "capability-policy.js",
+    "mode-pack.js",
+    "builtin-modes.js",
+    "skill-resources.js"
   ],
   "scripts": {
-    "test": "node test/locale.test.mjs && node test/presets.test.mjs && node test/guard.test.mjs && node test/stats.test.mjs && node test/page.test.mjs"
+    "test": "node test/locale.test.mjs && node test/presets.test.mjs && node test/builtin-modes.test.mjs && node test/skills.test.mjs && node test/guard.test.mjs && node test/stats.test.mjs && node test/spend.test.mjs && node test/spend-route.test.mjs && node test/unity.test.mjs && node test/page.test.mjs && node test/capability-policy.test.mjs && node test/mode-pack.test.mjs && node test/mode-pack.integration.test.mjs"
   },
   "dsh": {
     "bundle": {

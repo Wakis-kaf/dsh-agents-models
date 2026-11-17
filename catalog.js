@@ -23,9 +23,181 @@ export const CATEGORIES = Object.freeze([
   { id: 'web', zh: '网络', en: 'Network', hintZh: '联网搜索与网页抓取' },
   { id: 'session', zh: '会话与任务', en: 'Session & tasks', hintZh: '待办、提问、目标、定时、历史、工作目录' },
   { id: 'agent', zh: '智能体协作', en: 'Collaboration', hintZh: '子智能体、编排工作流、插件运行时探查' },
+  { id: 'unity', zh: 'Unity', en: 'Unity', hintZh: '连接正在运行的 Unity Editor：场景、脚本、测试、编译检查' },
   { id: 'skill', zh: '技能', en: 'Skills', hintZh: '按需加载仓库技能文档' },
   { id: 'deliver', zh: '交付', en: 'Delivery', hintZh: '把文件作为成品显式交付给用户' },
   { id: 'infra', zh: '基础设施', en: 'Infrastructure', hintZh: '长会话压缩等运行保障' },
+])
+
+/**
+ * Tunable fields on the guard.
+ *
+ * A catalog row's `config` is the shipped default; this list is the schema the
+ * settings page turns into inputs, so an operator can loosen or tighten one
+ * mode without editing the package. `default` here mirrors the fallback inside
+ * `guard.js`, so a row that omits a key and a row that spells it out agree.
+ *
+ * `scale` exists for readability only: `maxReadBytes` is stored in bytes and
+ * shown in MB, `maxJobWaitMs` in milliseconds and shown in seconds. The raw
+ * value is what crosses the wire; the surface multiplies back.
+ */
+export const GUARD_PARAMS = Object.freeze([
+  {
+    key: 'maxToolSteps',
+    type: 'number',
+    default: 0,
+    min: 0,
+    max: 500,
+    step: 10,
+    zh: '会话工具调用上限',
+    en: 'Tool-call budget',
+    hintZh: '只算真正跑起来的调用，present、提问、读任务结果都不计。0 表示不限制。',
+    hintEn: 'Only calls that actually run are counted; present, questions, and job reads are free. 0 means unlimited.',
+  },
+  {
+    key: 'repeatLimit',
+    type: 'number',
+    default: 1,
+    min: 1,
+    max: 20,
+    step: 1,
+    zh: '同一命令可重复次数',
+    en: 'Repeats per command',
+    hintZh: '窗口内同一条 pwsh 命令最多跑几次。3 是给"改完再渲染一次"留的余地。',
+    hintEn: 'How many times one exact pwsh command may run inside the window. 3 leaves room to render again after a fix.',
+  },
+  {
+    key: 'repeatWindowMs',
+    type: 'number',
+    default: 120_000,
+    min: 1,
+    max: 600,
+    step: 10,
+    scale: 1000,
+    unit: 's',
+    zh: '重复判定窗口',
+    en: 'Repeat window',
+    hintZh: '超出这个窗口，同一条命令重新算第一次。',
+    hintEn: 'Past this window the same command counts as a first run again.',
+  },
+  {
+    key: 'maxJobWaitMs',
+    type: 'number',
+    default: 30_000,
+    min: 1,
+    max: 300,
+    step: 5,
+    scale: 1000,
+    unit: 's',
+    zh: '后台任务最长等待',
+    en: 'Longest job wait',
+    hintZh: '一次前端等待最多阻塞多久；超过就被拒绝，让你先去干别的。',
+    hintEn: 'How long one foreground wait may block; beyond this the call is denied so you get on with other work.',
+  },
+  {
+    key: 'maxReadBytes',
+    type: 'number',
+    default: 10 * 1024 * 1024,
+    min: 1,
+    max: 512,
+    step: 1,
+    scale: 1024 * 1024,
+    unit: 'MB',
+    zh: '单文件读取上限',
+    en: 'Largest readable file',
+    hintZh: 'PowerShell 整读超过这个体积的文件会被拦下，改用 read 或 grep。',
+    hintEn: 'A whole-file PowerShell read above this size is denied; use read or grep instead.',
+  },
+  {
+    key: 'denyRepeats',
+    type: 'bool',
+    default: true,
+    zh: '拦截重复命令',
+    en: 'Deny repeated commands',
+    hintZh: '关掉后只保留大文件与盘符扫描两类拦截。',
+    hintEn: 'Off leaves only the large-file and drive-root checks.',
+  },
+  {
+    key: 'requireReadBeforePresent',
+    type: 'bool',
+    default: false,
+    zh: '交付前必须读过文件',
+    en: 'Read before delivering',
+    hintZh: '写完没读回来就交付，会被拒绝。',
+    hintEn: 'A file written and never read back cannot be delivered.',
+  },
+  {
+    key: 'requireRenderBeforePresent',
+    type: 'bool',
+    default: false,
+    zh: '交付网页前必须看过渲染图',
+    en: 'Look at a render before delivering a page',
+    hintZh: '网页交付要求最后写入之后用 read_image 看过一张图。读源码不算——源码看不出东西会不会动。',
+    hintEn: 'A page needs an image read with read_image after its last write. Reading the markup does not count: markup cannot show whether anything moves.',
+  },
+  {
+    key: 'requireMotionBeforePresent',
+    type: 'bool',
+    default: false,
+    zh: '交付网页前必须证明画面在动',
+    en: 'Prove something moves before delivering a page',
+    hintZh: '在上一条之上再加一层：要两张不同时刻的帧，且字节不同。只对声明了动画的页面生效——静态页面不受影响。',
+    hintEn: 'Stacks on the render gate: two frames from different moments, with different bytes. Only applies to pages that declare animation, so static deliverables are unaffected.',
+  },
+  {
+    key: 'requirePlanBeforeWrite',
+    type: 'bool',
+    default: false,
+    zh: '大文件先写计划',
+    en: 'Plan before a large write',
+    hintZh: '超过阈值的写入要求先用 todo_write 交一份计划。',
+    hintEn: 'A write above the threshold needs a todo_write plan first.',
+  },
+  {
+    key: 'planThresholdChars',
+    type: 'number',
+    default: 4000,
+    min: 0,
+    max: 100_000,
+    step: 500,
+    zh: '触发计划的字符数',
+    en: 'Plan threshold',
+    hintZh: '写到这个长度还没计划，就先被拦一次。',
+    hintEn: 'A write this long without a plan is stopped once.',
+  },
+])
+
+/**
+ * Tunable fields on the Unity bridge.
+ *
+ * Kept two, on purpose. The bridge already collapses 48 MCP tools into one
+ * dispatcher; adding knobs here would re-create the choice surface it exists to
+ * remove. `url` is the one value that differs per machine.
+ */
+export const UNITY_PARAMS = Object.freeze([
+  {
+    key: 'url',
+    type: 'string',
+    default: 'http://127.0.0.1:8080/mcp',
+    zh: 'Unity MCP 地址',
+    en: 'Unity MCP endpoint',
+    hintZh: 'Unity MCP server 的 streamable-http 地址，默认 8080。',
+    hintEn: 'The streamable-http endpoint of the Unity MCP server; port 8080 by default.',
+  },
+  {
+    key: 'timeoutMs',
+    type: 'number',
+    default: 60_000,
+    min: 5,
+    max: 600,
+    step: 5,
+    scale: 1000,
+    unit: 's',
+    zh: '单次请求超时',
+    en: 'Request timeout',
+    hintZh: '一次 MCP 请求最多等多久。冷启动握手实测 0.9 秒，预热后 28 毫秒，正常值够用。',
+    hintEn: 'How long one MCP request may take. A cold handshake measured 0.9 s and a warm read 28 ms on this machine.',
+  },
 ])
 
 /** Long-session compaction: not a model-facing tool, always worth keeping. */
@@ -53,6 +225,31 @@ const SKILL_GROUP = {
   config: [
     { id: 'skill-filesystem', name: '@deepseek-ai/dsh-skill-filesystem' },
     { id: 'tool-skill', name: '@deepseek-ai/dsh-tool-skill' },
+  ],
+}
+
+/**
+ * A persistent PowerShell needs its own PTY backend, not just the tool row.
+ * The group isolates `terminals` so this preset cannot collide with another
+ * mode's shell, and keeps a 60 s per-command cap for the Flash profiles.
+ */
+const PERSISTENT_PWSH_GROUP = {
+  id: 'persistent-shell',
+  name: 'cordis:group',
+  group: true,
+  isolate: { terminals: true },
+  config: [
+    { id: 'pty', name: '@deepseek-ai/dsh-terminal' },
+    {
+      id: 'terminal-pwsh',
+      name: '@deepseek-ai/dsh-terminal-bash',
+      config: { shellDialect: 'pwsh', timeoutMs: 60000 },
+    },
+    {
+      id: 'persistent-pwsh',
+      name: '@deepseek-ai/dsh-tool-pwsh-persistent',
+      config: { timeoutMs: 60000 },
+    },
   ],
 }
 
@@ -133,13 +330,14 @@ export const TOOLS = Object.freeze([
   {
     id: 'tool-pwsh-persistent',
     pkg: '@deepseek-ai/dsh-tool-pwsh-persistent',
-    row: 'pwsh-persistent',
-    config: { timeoutMs: 300000 },
+    row: PERSISTENT_PWSH_GROUP,
     category: 'shell',
     zh: 'PowerShell 常驻会话',
     en: 'Persistent PowerShell',
-    descZh: '状态跨调用保留的 PowerShell，适合 cd、虚拟环境、长流程。与上一条同名，二选一。',
-    descEn: 'PowerShell whose state survives across calls. Same tool name as the one-shot row.',
+    descZh:
+      '状态跨调用保留的 PowerShell，自带隔离的 PTY 后端；复用同一个进程，避免每次 0.6–0.8 秒启动。与单次 pwsh 二选一。',
+    descEn:
+      'PowerShell whose state survives across calls, with its own isolated PTY backend; one process instead of a 0.6–0.8 s start per call. Same tool name as the one-shot row.',
     tools: ['pwsh'],
     defaultOn: false,
     exclusiveWith: ['tool-pwsh'],
@@ -357,6 +555,22 @@ export const TOOLS = Object.freeze([
     defaultOn: true,
   },
   {
+    id: 'tool-unity',
+    pkg: 'dsh-agents-modes/unity',
+    row: 'unity-bridge',
+    config: { url: 'http://127.0.0.1:8080/mcp', timeoutMs: 60_000 },
+    params: UNITY_PARAMS,
+    category: 'unity',
+    zh: 'Unity Editor 桥接',
+    en: 'Unity Editor bridge',
+    descZh:
+      '通过本机 Unity MCP server 驱动正在运行的 Editor：一个 unity 调度器加一个 unity_verify 编译/控制台/测试体检。工具表约 1.8 KB——直接挂 48 个 MCP 工具是 109 KB，每步都要重发。',
+    descEn:
+      'Drive the running Editor through the local Unity MCP server: one `unity` dispatcher plus one `unity_verify` health check. Its tool table is ~1.8 KB — mounting the 48 MCP tools directly costs 109 KB re-sent every step.',
+    tools: ['unity', 'unity_verify'],
+    defaultOn: false,
+  },
+  {
     id: 'present',
     pkg: '@deepseek-ai/dsh-tool-present',
     row: 'present',
@@ -382,6 +596,20 @@ export const TOOLS = Object.freeze([
     locked: true,
   },
   {
+    id: 'fs-observation-policy',
+    pkg: '@deepseek-ai/dsh-fs-observation-policy',
+    row: 'fs-observation-policy',
+    category: 'infra',
+    zh: '文件先读后写',
+    en: 'Read-before-write policy',
+    descZh:
+      '修改文件前要求先读，并拒绝基于过期版本的编辑/写入；行为接近 Claude Code 的 read-before-edit。不是模型工具，不增加工具面。',
+    descEn:
+      'Requires a read before write/edit and rejects stale versions; close to Claude Code read-before-edit. Not a model-facing tool.',
+    tools: [],
+    defaultOn: false,
+  },
+  {
     id: 'workbuddy-guard',
     pkg: 'dsh-agents-modes/guard',
     row: 'workbuddy-guard',
@@ -391,6 +619,7 @@ export const TOOLS = Object.freeze([
       maxJobWaitMs: 30_000,
       denyRepeats: true,
     },
+    params: GUARD_PARAMS,
     category: 'infra',
     zh: 'WorkBuddy 命令守卫',
     en: 'WorkBuddy command guard',
@@ -409,16 +638,30 @@ export const TOOLS = Object.freeze([
       provider: 'workbuddy',
       maxReadBytes: 10 * 1024 * 1024,
       maxJobWaitMs: 30_000,
-      maxToolSteps: 30,
+      // 30 was too tight to render, look, and fix even once. 60 then turned out
+      // to buy nine honest cycles and no room to finish, so a session died with
+      // a static picture in hand. 120 is a safety net, not a target: the speed
+      // lever is the persona's two-round cap on polish, not this ceiling.
+      maxToolSteps: 120,
       denyRepeats: true,
+      repeatLimit: 3,
+      requireReadBeforePresent: true,
+      // The gate that the pelican session walked through: it read its own
+      // markup, called that a review, and shipped a still frame.
+      requireRenderBeforePresent: true,
+      // And one frame still cannot show motion, so the strict row wants two.
+      requireMotionBeforePresent: true,
+      requirePlanBeforeWrite: true,
+      planThresholdChars: 4000,
     },
+    params: GUARD_PARAMS,
     category: 'infra',
     zh: 'WorkBuddy 命令守卫（严格）',
     en: 'WorkBuddy command guard (strict)',
     descZh:
-      '在基本守卫上增加重复 pwsh 命令拦截与每会话最多 30 个工具步，适合 WorkBuddy Flash；达到预算后强制模型基于已有信息回答。',
+      '在基本守卫上增加重复 pwsh 拦截、每会话 60 个工具步预算，以及三道交付门：写完要读回来、网页要用 read_image 看过渲染图、大文件要先交计划。适合 WorkBuddy Flash；达到预算后强制模型基于已有信息回答。',
     descEn:
-      'Adds repeated-pwsh denial and a 30-tool-call session budget to the base guard; used by WorkBuddy Flash. At the budget the model must answer from the evidence it has.',
+      'Adds repeated-pwsh denial, a 60-tool-call session budget, and three delivery gates to the base guard: read back what you wrote, look at a rendered image before shipping a page, and plan before a large write. Used by WorkBuddy Flash. At the budget the model must answer from the evidence it has.',
     tools: [],
     defaultOn: false,
   },

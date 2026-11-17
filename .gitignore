@@ -1,3 +1,20 @@
-.tmp/
+# Dependencies
 node_modules/
+
+# Local scratch: unpacked bundles, asar dumps, render sandboxes, font extraction
+.tmp/
+.tmp-asar/
+.wbcw-pristine-*/
+.workbuddy/
+fonts-out/
+biketest/
+
+# Test and verification output
 *.log
+test/shots/
+
+# Editor / OS noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
